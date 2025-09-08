@@ -4,9 +4,8 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.decomposition import PCA
 
 # Load dataset
-df = pd.read_csv("cleaned_dataset.csv", sep=";")  # change filename if needed
-X = df.drop('quality',axis=1)
-
+df = pd.read_csv("cleaned_dataset.csv")  # change filename if needed
+X = df.drop(columns='quality', axis=1, errors="ignore")
 # Scale & fit PCA
 scaler = RobustScaler()
 X_scaled = scaler.fit_transform(X)
