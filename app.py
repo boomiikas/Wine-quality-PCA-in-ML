@@ -1,73 +1,69 @@
 import gradio as gr
 import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
 from sklearn.decomposition import PCA
 
-# ---------- CONFIG ----------
-DATA_PATH = "winequality-red.csv"   # change to white if needed
-USERS = {"admin": "1234", "boomika": "1234"}  # login users
+# Load dataset
+df = pd.read_csv("winequality-red.csv", sep=";")  # change filename if needed
+X = df.drop(columns=["quality"])
 
-# ---------- Load & preprocess ----------
-df = pd.read_csv(DATA_PATH, sep=";")
-X = df.drop(columns=["quality"]).values.astype(float)
-
-# Fit scaler + PCA
-scaler = StandardScaler()
+# Scale & fit PCA
+scaler = RobustScaler()
 X_scaled = scaler.fit_transform(X)
 
-pca = PCA(n_components=5)  # keep first 5 PCs
-pca.fit(X_scaled)
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
 
-# Feature names
-numeric_cols = df.drop(columns=["quality"]).columns.tolist()
+# Store login credentials (simple dictionary)
+USERS = {"admin": "1234", "user": "pass"}
 
-# ---------- Helper Functions ----------
-def check_login(username, password):
-    return username in USERS and USERS[username] == password
+# Function to check login
+def login(username, password):
+    if username in USERS and USERS[username] == password:
+        return gr.update(visible=False), gr.update(visible=True)
+    else:
+        return gr.update(value="❌ Invalid credentials", visible=True), gr.update(visible=False)
 
-def predict_pca(*user_inputs):
-    user_arr = np.array([user_inputs], dtype=float)
-    user_scaled = scaler.transform(user_arr)
-    user_pca = pca.transform(user_scaled)
-    return {
-        "PC1": round(user_pca[0,0], 4),
-        "PC2": round(user_pca[0,1], 4),
-        "PC3": round(user_pca[0,2], 4)
-    }
+# PCA prediction function
+def predict_pc(*features):
+    scaled = scaler.transform([features])
+    pcs = pca.transform(scaled)
+    return float(pcs[0, 0]), float(pcs[0, 1])
 
-# ---------- Build Gradio App ----------
+# Build login UI
 with gr.Blocks() as demo:
-    # --- Login UI ---
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("## 🔐 Login")
-            username_input = gr.Textbox(label="Username")
-            password_input = gr.Textbox(label="Password", type="password")
-            login_btn = gr.Button("Login")
-            login_message = gr.Textbox(label="Status")
+    gr.Markdown("## 🔑 PCA Prediction App (Wine Dataset)")
 
-    # --- Main UI (hidden until login) ---
-    main_ui = gr.Column(visible=False)
-    with main_ui:
-        gr.Markdown("## 🍷 Wine PCA Predictor")
-        gr.Markdown("Enter chemical features to compute PCA components.")
-        input_fields = [gr.Number(label=col) for col in numeric_cols]
-        output_json = gr.JSON(label="PCA Components")
-        predict_btn = gr.Button("Compute PCA")
-        predict_btn.click(fn=predict_pca, inputs=input_fields, outputs=output_json)
+    # Login section
+    with gr.Row(visible=True) as login_row:
+        username = gr.Textbox(label="Username")
+        password = gr.Textbox(label="Password", type="password")
+        login_btn = gr.Button("Login")
+        login_status = gr.Textbox(label="Status", visible=False)
 
-    # --- Login Action ---
-    def login_action(username, password):
-        if check_login(username, password):
-            return "✅ Login successful! You can now use the PCA tool.", gr.update(visible=True)
-        else:
-            return "❌ Login failed! Check username/password.", gr.update(visible=False)
+    # PCA input section (hidden until login)
+    with gr.Row(visible=False) as pca_row:
+        inputs = []
+        for col in X.columns:
+            inputs.append(gr.Number(label=col))
 
-    login_btn.click(fn=login_action,
-                    inputs=[username_input, password_input],
-                    outputs=[login_message, main_ui])
+        predict_btn = gr.Button("Predict PC1 & PC2")
+        output_pc1 = gr.Number(label="PC1")
+        output_pc2 = gr.Number(label="PC2")
 
-# ---------- Launch ----------
-if __name__ == "__main__":
-    demo.launch(share=True)
+    # Bind login
+    login_btn.click(
+        login,
+        inputs=[username, password],
+        outputs=[login_status, pca_row],
+    )
+
+    # Bind PCA prediction
+    predict_btn.click(
+        predict_pc,
+        inputs=inputs,
+        outputs=[output_pc1, output_pc2],
+    )
+
+# Run app
+demo.launch()
