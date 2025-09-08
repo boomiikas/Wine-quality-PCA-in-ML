@@ -14,11 +14,8 @@ We explore the dataset, apply preprocessing, scale features, and use **Principal
 
 ## 📸 App Screenshot  
 
-*(You can add the screenshot here later, e.g.)*  
-
-```markdown
-![App Screenshot](screenshot.png)
-```
+<img width="1907" height="307" alt="image" src="https://github.com/user-attachments/assets/bd09fb06-d2fa-4a06-bee2-dcec95d871c6" />
+<img width="1917" height="679" alt="image" src="https://github.com/user-attachments/assets/3df32339-fab0-4e4f-ad70-65ebf531d168" />
 
 ---
 
@@ -39,7 +36,8 @@ To better understand the distribution of wine quality features, we performed the
 Visualizes the probability distribution of each feature.  
 *Helps to see skewness and modality of the data.*  
 
-![KDE Plots](kde_plots.png)
+<img width="1488" height="789" alt="image" src="https://github.com/user-attachments/assets/e05a7294-24ee-4405-bea0-baa5c1fba343" />
+
 
 ---
 
@@ -47,7 +45,8 @@ Visualizes the probability distribution of each feature.
 Displays the frequency distribution of each variable.  
 *Useful for understanding spread, central tendency, and outliers.*  
 
-![Histograms](histograms.png)
+<img width="1489" height="790" alt="image" src="https://github.com/user-attachments/assets/ccf27458-4d9f-4b1e-8260-63193748d625" />
+
 
 ---
 
@@ -55,7 +54,8 @@ Displays the frequency distribution of each variable.
 Highlights the median, quartiles, and potential outliers in each feature.  
 *Good for spotting skewed features and extreme values.*  
 
-![Boxplots](boxplots.png)
+<img width="1489" height="790" alt="image" src="https://github.com/user-attachments/assets/8844d03b-1dcf-4740-ac00-9a1bc201b301" />
+
 
 ---
 
@@ -64,7 +64,8 @@ We applied a **log1p transformation** (`log(1+x)`) to reduce skewness and make t
 
 Visualizing the transformed features using KDE plots shows smoother, more symmetric distributions.  
 
-![Log1p KDE](log1p_kde.png)
+<img width="1487" height="789" alt="image" src="https://github.com/user-attachments/assets/f0c6f023-5167-4ca9-992b-ac5240473005" />
+
 
 ---
 
