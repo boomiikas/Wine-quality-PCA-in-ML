@@ -1,5 +1,5 @@
-import gradio as gr
-import pandas as pd
+import  gradio as gr
+import  pandas as pd
 from sklearn.preprocessing import RobustScaler
 from sklearn.decomposition import PCA
 
