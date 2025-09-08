@@ -12,6 +12,15 @@ We explore the dataset, apply preprocessing, scale features, and use **Principal
 
 ---
 
+## 🔑 App Login Credentials  
+
+For accessing the demo app:  
+
+- **Username:** `admin`  
+- **Password:** `1234`
+
+---
+
 ## 📸 App Screenshot  
 
 <img width="1907" height="307" alt="image" src="https://github.com/user-attachments/assets/bd09fb06-d2fa-4a06-bee2-dcec95d871c6" />
