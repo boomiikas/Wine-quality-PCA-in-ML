@@ -75,10 +75,26 @@ Visualizing the transformed features using KDE plots shows smoother, more symmet
 
 <img width="1487" height="789" alt="image" src="https://github.com/user-attachments/assets/f0c6f023-5167-4ca9-992b-ac5240473005" />
 
+---
+### 3D PCA Visualization
+Reduced to 6 PCs, plotted first 3 PCs in 3D.
+
+<img width="574" height="510" alt="image" src="https://github.com/user-attachments/assets/4396937e-caaa-48fd-af89-3105c351c11e" />
+---
+### Scree Plot
+Visualized the cumulative explained variance.
+
+Found 90% variance threshold → optimal components = 6.
+<img width="691" height="468" alt="image" src="https://github.com/user-attachments/assets/67d73761-e06b-452d-b68d-6f4a12f84fd9" />
 
 ---
 
-📌 *These plots help guide preprocessing decisions such as scaling, normalization, and PCA application.*
+## ✅ Key Insights
+
+- **PC1** captures ~44% of variance, **PC2** ~17%.  
+- First **6 PCs capture >90% variance** (dimensionality reduced from 11 → 6).  
+- Reconstruction error is very low → PCA preserved most information.  
+- PCA visualizations reveal clear clustering patterns based on wine quality.  
 
 ---
 
