@@ -1,68 +1,67 @@
-import  gradio as gr
-import  pandas as pd
-from sklearn.preprocessing import RobustScaler
-from sklearn.decomposition import PCA
+import gradio as gr
+import numpy as np
+import joblib
+from sklearn.neighbors import NearestNeighbors
 
-# Load dataset
-df = pd.read_csv("cleaned_dataset.csv")  # change filename if needed
-X = df.drop(columns='quality', axis=1, errors="ignore")
-# Scale & fit PCA
-scaler = RobustScaler()
-X_scaled = scaler.fit_transform(X)
+# --- Load saved items ---
+model = joblib.load("best_cluster_model.pkl")   # DBSCAN
+scaler = joblib.load("scaler.pkl")
+labels = joblib.load("cluster_labels.pkl")
+quality_map = joblib.load("cluster_quality_map.pkl")
+X_scaled = np.load("X_scaled.npy")
 
-pca = PCA(n_components=2)
-X_pca = pca.fit_transform(X_scaled)
+# Build Nearest Neighbors for DBSCAN prediction
+nn = NearestNeighbors(n_neighbors=1).fit(X_scaled)
 
-# Store login credentials (simple dictionary)
-USERS = {"admin": "1234", "user": "pass"}
+# --- Authentication ---
+VALID_USERS = {"admin": "1234", "user": "pass"}
 
-# Function to check login
-def login(username, password):
-    if username in USERS and USERS[username] == password:
-        return gr.update(visible=False), gr.update(visible=True)
+def authenticate(username, password):
+    return username in VALID_USERS and VALID_USERS[username] == password
+
+# --- Prediction Function ---
+def predict_cluster(username, password, features):
+    if not authenticate(username, password):
+        return "❌ Invalid login!", None
+    
+    try:
+        features = [float(x) for x in features.split(",")]
+        features = np.array([features])
+        features_scaled = scaler.transform(features)
+    except Exception:
+        return "⚠️ Please enter 11 valid numeric features, comma-separated!", None
+
+    # Find nearest neighbor cluster label
+    _, idx = nn.kneighbors(features_scaled)
+    cluster = labels[idx[0][0]]
+
+    # Interpret cluster
+    if cluster == -1:
+        result = "🚨 Noise/Outlier (Does not belong to any cluster)"
     else:
-        return gr.update(value="❌ Invalid credentials", visible=True), gr.update(visible=False)
+        result = quality_map.get(cluster, f"Cluster {cluster} (Unknown Quality)")
 
-# PCA prediction function
-def predict_pc(*features):
-    scaled = scaler.transform([features])
-    pcs = pca.transform(scaled)
-    return float(pcs[0, 0]), float(pcs[0, 1])
+    return f"🔮 Prediction: {result}", int(cluster)
 
-# Build login UI
-with gr.Blocks() as demo:
-    gr.Markdown("## 🔑 PCA Prediction App (Wine Dataset)")
+# --- Gradio App ---
+with gr.Blocks(theme="soft") as demo:
+    gr.Markdown("# 🍇 Wine Quality Prediction with Clustering (DBSCAN Best)")
 
-    # Login section
-    with gr.Row(visible=True) as login_row:
+    with gr.Tab("🔑 Login & Predict"):
         username = gr.Textbox(label="Username")
         password = gr.Textbox(label="Password", type="password")
-        login_btn = gr.Button("Login")
-        login_status = gr.Textbox(label="Status", visible=False)
+        features = gr.Textbox(
+            label="Enter Features (comma separated, 11 values)",
+            placeholder="7.4,0.7,0.0,1.9,0.076,11,34,0.9978,3.51,0.56,9.4"
+        )
+        predict_btn = gr.Button("✨ Predict Cluster")
+        output_text = gr.Textbox(label="Result", interactive=False)
+        output_cluster = gr.Number(label="Cluster ID", interactive=False)
 
-    # PCA input section (hidden until login)
-    with gr.Row(visible=False) as pca_row:
-        inputs = []
-        for col in X.columns:
-            inputs.append(gr.Number(label=col))
+        predict_btn.click(
+            predict_cluster,
+            inputs=[username, password, features],
+            outputs=[output_text, output_cluster]
+        )
 
-        predict_btn = gr.Button("Predict PC1 & PC2")
-        output_pc1 = gr.Number(label="PC1")
-        output_pc2 = gr.Number(label="PC2")
-
-    # Bind login
-    login_btn.click(
-        login,
-        inputs=[username, password],
-        outputs=[login_status, pca_row],
-    )
-
-    # Bind PCA prediction
-    predict_btn.click(
-        predict_pc,
-        inputs=inputs,
-        outputs=[output_pc1, output_pc2],
-    )
-
-# Run app
 demo.launch()
