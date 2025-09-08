@@ -2,3 +2,4 @@ gradio
 numpy
 scikit-learn
 pandas
+plotly
