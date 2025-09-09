@@ -50,10 +50,16 @@ def predict_cluster(username, password, features):
     _, idx = nn.kneighbors(features_scaled)
     cluster = labels[idx[0][0]]
 
+# Force assignment to nearest cluster (even if DBSCAN said -1)
     if cluster == -1:
-        return "🚨 Noise/Outlier (Does not belong to any cluster)", -1
-    else:
-        return f"🔮 Prediction: {cluster_quality_map.get(cluster, 'Unknown')}", int(cluster)
+    # Find nearest NON-noise cluster
+        for neighbor_idx in idx[0]:
+            if labels[neighbor_idx] != -1:
+                cluster = labels[neighbor_idx]
+                break
+    result = cluster_quality_map.get(cluster, "Unknown Cluster")
+    return f"🔮 Prediction: {result}", int(cluster)
+
 
 with gr.Blocks(theme="soft") as demo:
     gr.Markdown("# 🍇 Wine Quality Clustering (DBSCAN)")
