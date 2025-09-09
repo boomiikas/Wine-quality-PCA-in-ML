@@ -23,8 +23,8 @@ For accessing the demo app:
 
 ## 📸 App Screenshot  
 
-<img width="1907" height="307" alt="image" src="https://github.com/user-attachments/assets/bd09fb06-d2fa-4a06-bee2-dcec95d871c6" />
-<img width="1917" height="679" alt="image" src="https://github.com/user-attachments/assets/3df32339-fab0-4e4f-ad70-65ebf531d168" />
+<img width="1914" height="883" alt="image" src="https://github.com/user-attachments/assets/78f73266-34d7-4ad0-bf3e-1420c29b376c" />
+
 
 ---
 
