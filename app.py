@@ -2,78 +2,72 @@ import gradio as gr
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import RobustScaler
-from sklearn.cluster import DBSCAN
-from sklearn.neighbors import NearestNeighbors
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 
-# --- Train inside the app ---
+# --- Load dataset ---
 df = pd.read_csv("cleaned_dataset.csv")
 X = df.drop("quality", axis=1)
 y = df["quality"]
 
+# --- Scale + PCA ---
 scaler = RobustScaler()
 X_scaled = scaler.fit_transform(X)
 
-dbscan = DBSCAN(eps=2, min_samples=5)
-labels = dbscan.fit_predict(X_scaled)
+# Reduce dimensions using PCA (keep most variance)
+pca = PCA(n_components=6)  # you can change to 2 for visualization, 6 for ~90% variance
+X_pca = pca.fit_transform(X_scaled)
 
-# Build quality mapping
-cluster_quality_map = {}
-for cluster in np.unique(labels):
-    if cluster == -1: continue
-    cluster_indices = np.where(labels == cluster)[0]
-    avg_quality = y.iloc[cluster_indices].mean()
-    if avg_quality >= 5:
-        cluster_quality_map[cluster] = "🍷 Good Quality"
-    elif avg_quality >= 3.5:
-        cluster_quality_map[cluster] = "👌 Medium Quality"
-    else:
-        cluster_quality_map[cluster] = "⚠️ Low Quality"
+# --- Train Classifier ---
+X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, random_state=42)
 
-# Nearest neighbor for cluster prediction
-nn = NearestNeighbors(n_neighbors=1).fit(X_scaled)
+clf = RandomForestClassifier(n_estimators=200, random_state=42)
+clf.fit(X_train, y_train)
 
+print("Model Evaluation:\n", classification_report(y_test, clf.predict(X_test)))
+
+# --- User Authentication ---
 VALID_USERS = {"admin": "1234", "user": "pass"}
 
 def authenticate(username, password):
     return username in VALID_USERS and VALID_USERS[username] == password
 
-def predict_cluster(username, password, features):
+def predict_quality(username, password, features):
     if not authenticate(username, password):
         return "❌ Invalid login!", None
     
     try:
         features = [float(x) for x in features.split(",")]
+        if len(features) != X.shape[1]:
+            return f"⚠️ Please enter {X.shape[1]} valid numbers (comma-separated).", None
+        
+        # Scale + PCA transform
         features_scaled = scaler.transform([features])
+        features_pca = pca.transform(features_scaled)
+        
+        # Predict
+        prediction = clf.predict(features_pca)[0]
+        return f"🔮 Predicted Wine Quality: {prediction}", int(prediction)
     except:
-        return "⚠️ Please enter 11 valid numbers (comma-separated).", None
-    
-    _, idx = nn.kneighbors(features_scaled)
-    cluster = labels[idx[0][0]]
-
-# Force assignment to nearest cluster (even if DBSCAN said -1)
-    if cluster == -1:
-    # Find nearest NON-noise cluster
-        for neighbor_idx in idx[0]:
-            if labels[neighbor_idx] != -1:
-                cluster = labels[neighbor_idx]
-                break
-    result = cluster_quality_map.get(cluster, "Unknown Cluster")
-    return f"🔮 Prediction: {result}", int(cluster)
+        return "⚠️ Invalid input format.", None
 
 
+# --- Gradio App ---
 with gr.Blocks(theme="soft") as demo:
-    gr.Markdown("# 🍇 Wine Quality Clustering (DBSCAN)")
+    gr.Markdown("# 🍇 Wine Quality Classification (PCA + Random Forest)")
 
     username = gr.Textbox(label="Username")
     password = gr.Textbox(label="Password", type="password")
     features = gr.Textbox(
-        label="Enter Features (comma separated, 11 values)",
+        label=f"Enter Features (comma separated, {X.shape[1]} values)",
         placeholder="7.4,0.7,0.0,1.9,0.076,11,34,0.9978,3.51,0.56,9.4"
     )
-    predict_btn = gr.Button("✨ Predict Cluster")
+    predict_btn = gr.Button("✨ Predict Quality")
     output_text = gr.Textbox(label="Result")
-    output_cluster = gr.Number(label="Cluster ID")
+    output_quality = gr.Number(label="Predicted Quality")
 
-    predict_btn.click(predict_cluster, [username, password, features], [output_text, output_cluster])
+    predict_btn.click(predict_quality, [username, password, features], [output_text, output_quality])
 
 demo.launch()
